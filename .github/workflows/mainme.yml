@@ -46,11 +46,3 @@ jobs:
             echo "فشل البث بعد $max_retries محاولات."
             exit 1
           fi
-
-      - name: Restart Action on Failure (Auto Restart)
-        if: failure()  # إذا فشل البث أو انقطع
-        run: |
-          echo "إعادة تشغيل البث تلقائيًا..."
-          curl -X POST https://api.github.com/repos/${{ github.repository }}/actions/workflows/facebook_live_stream.yml/dispatches \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -d '{"ref":"main"}'  # إرسال طلب إعادة تشغيل GitHub Action
