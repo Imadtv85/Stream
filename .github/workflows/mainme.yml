@@ -9,7 +9,7 @@ on:
 jobs:
   stream:
     runs-on: ubuntu-latest  # البيئة المستخدمة للبث
-    timeout-minutes: 1440  # تحديد مدة البث
+    timeout-minutes: 1440  # تحديد مدة البث (يمكنك تعديلها حسب الحاجة)
 
     steps:
       - name: Checkout repository
