@@ -1,0 +1,83 @@
+name: VIP Avica RDP Setup and Monitor
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-vip-rdp:
+    name: Setup and Monitor VIP Avica RDP
+    runs-on: windows-latest
+    timeout-minutes: 0  # استمرار العمل حتى الانتهاء
+
+    steps:
+      - name: Downloading & Installing Essentials
+        run: |
+          Invoke-WebRequest -Uri "https://gitlab.com/raposabrty/pcrdp/-/raw/main/Downloads.bat" -OutFile "Downloads.bat"
+          cmd /c Downloads.bat
+
+      - name: Show Website
+        run: |
+          cmd /c show.bat
+
+      - name: Run RDP Setup
+        run: |
+          # إعداد RDP لضمان الاتصال المستمر
+          cmd /c "start /B loop.bat"
+
+      - name: Monitor RDP and Auto-Restart
+        run: |
+          # التحقق من حالة الخدمة بشكل مستمر وإعادة تشغيلها عند توقفها
+          while ($true) {
+            if (!(Get-Process -Name "AvicaRDP" -ErrorAction SilentlyContinue)) {
+              echo "RDP service stopped. Restarting..."
+              sc start "AvicaRDP"
+              # إرسال إشعار بالبريد الإلكتروني أو عبر الرسائل النصية (من خلال API)
+              send-mail -to "admin@yourdomain.com" -subject "RDP Service Restarted" -body "The RDP service was restarted successfully."
+            }
+            Start-Sleep -Seconds 60  # تحقق كل 60 ثانية
+          }
+
+      - name: Set RDP Service to Auto-Start
+        run: |
+          # تأكد من إعداد الخدمة لتبدأ تلقائيًا عند إعادة التشغيل
+          sc config "AvicaRDP" start= auto
+          sc start "AvicaRDP"
+
+      - name: IP Rotation for Anti-Block
+        run: |
+          # تغيير الـ IP لضمان استمرارية الخدمة وعدم الحظر
+          Invoke-WebRequest -Uri "https://api.ipify.org?format=json" -OutFile "current_ip.json"
+          $ip = (Get-Content "current_ip.json" | ConvertFrom-Json).ip
+          echo "Current IP: $ip"
+          # تنفيذ عملية تغيير الـ IP (استخدام تقنية VPN أو Proxy)
+          # تأكد من أن لديك خدمة VPN تعمل وتدير الـ IP الخاص بك
+          cmd /c "start vpn_client.exe -change_ip"
+
+      - name: Monitor System Health
+        run: |
+          # مراقبة سلامة النظام مثل درجة الحرارة، استهلاك الذاكرة، واستهلاك المعالج
+          Get-WmiObject -Class Win32_OperatingSystem | Select-Object TotalVisibleMemorySize, FreePhysicalMemory, PSComputerName
+          Get-WmiObject -Class Win32_Processor | Select-Object LoadPercentage
+          # إرسال إشعار في حالة استهلاك النظام العالي
+          if ((Get-WmiObject -Class Win32_Processor).LoadPercentage -gt 80) {
+            send-mail -to "admin@yourdomain.com" -subject "High CPU Load Warning" -body "The system CPU load is over 80%."
+          }
+
+      - name: Ensure High Availability of RDP
+        run: |
+          # تحقق من الاتصال المستمر باستخدام PING
+          ping -n 10 "192.168.1.1"  # استبدل بـ IP الخاص بالخادم
+          if ($?) {
+            echo "Connection is stable."
+          } else {
+            echo "Connection failed. Attempting to reconnect..."
+            sc start "AvicaRDP"
+          }
+
+      - name: Record RDP Usage for Monitoring
+        run: |
+          # تسجيل بيانات استخدام RDP (مثل الوقت المستغرق وعدد الاتصالات)
+          Get-Date | Out-File "rdp_usage_log.txt" -Append
+          echo "RDP service running since $(Get-Date)" >> "rdp_usage_log.txt"
+          # إرسال تقرير استخدام يومي عبر البريد الإلكتروني
+          send-mail -to "admin@yourdomain.com" -subject "Daily RDP Usage Report" -body (Get-Content "rdp_usage_log.txt")
