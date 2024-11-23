@@ -48,35 +48,6 @@ jobs:
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           -d '{"ref":"main"}'  # إرسال طلب إعادة تشغيل GitHub Action
 
-      - name: Email Notification on Success/Failure
-        run: |
-          python3 -c "
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-def send_email(subject, body):
-    sender_email = 'your_email@example.com'  # بريدك الإلكتروني
-    receiver_email = 'imadmaskali22@gmail.com'  # البريد الإلكتروني للمستلم
-    password = 'your_email_password'  # كلمة مرور البريد الإلكتروني
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = receiver_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
-    
-    try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender_email, password)
-            text = msg.as_string()
-            server.sendmail(sender_email, receiver_email, text)
-            print('تم إرسال البريد الإلكتروني بنجاح.')
-    except Exception as e:
-        print(f'فشل إرسال البريد الإلكتروني: {e}')
-        
-send_email('بث فيسبوك', 'تم بدء البث بنجاح أو فشل بسبب مشكلة في الاتصال.')
-"
-
       - name: Log Facebook Stream Status
         run: |
           echo "بث فيسبوك قيد التشغيل..." >> facebook_stream_status.log  # تسجيل حالة البث
