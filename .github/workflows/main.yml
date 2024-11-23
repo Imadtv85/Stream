@@ -1,0 +1,29 @@
+name: Auto Facebook Live Stream
+
+on:
+  schedule:
+    # تشغيل كل يوم في الساعة 12:00 (تعديل التوقيت حسب الحاجة)
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  live_stream:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: Install FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    - name: Run Facebook Live Stream Script
+      run: |
+        python stream_facebook.py
