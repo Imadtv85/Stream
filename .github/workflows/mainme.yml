@@ -24,7 +24,6 @@ jobs:
         run: |
           OWNER_EMAIL="imadmaskali22@gmail.com"  # البريد الإلكتروني للمالك
           CURRENT_USER_EMAIL=$(git config --get user.email)
-
           if [ "$CURRENT_USER_EMAIL" != "$OWNER_EMAIL" ]; then
             echo "أنت لست المالك المصرح له! البث لن يبدأ."
             exit 1
@@ -36,7 +35,6 @@ jobs:
           STREAM_KEY="FB-122166221492260989-0-AbzzM6v3SqBiOlmm"
           M3U8_URL="https://live4.beinconnect.us/YallaGoalApp/beINSports1.m3u8"  # رابط m3u8 للبث
           RTMP_URL="rtmps://live-api-s.facebook.com:443/rtmp/${STREAM_KEY}"
-
           # البث مع إضافة العلامة المائية (watermark)
           ffmpeg -re -i "${M3U8_URL}" -filter_complex "[0:v]drawtext=text='IMADTV.COM':fontcolor=white:fontsize=40:x=10:y=10" \
           -c:v libx264 -preset fast -b:v 1500k -c:a aac -ar 44100 -b:a 128k -f flv "${RTMP_URL}" \
