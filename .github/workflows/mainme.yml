@@ -1,0 +1,79 @@
+name: Continuous Facebook Live Stream with Watermark
+
+on:
+  workflow_dispatch:  # تشغيل يدوي
+  push:
+    branches:
+      - main  # عندما يتم التعديل على الفرع الرئيسي، يتم تشغيل البث
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest  # البيئة المستخدمة للبث
+    timeout-minutes: 1440  # تحديد مدة البث
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3  # تحقق من المستودع
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt update
+          sudo apt install ffmpeg -y  # تثبيت FFmpeg
+
+      - name: Verify the user is authorized (check owner)
+        run: |
+          OWNER_EMAIL="imadmaskali22@gmail.com"  # البريد الإلكتروني الخاص بالمالك
+          CURRENT_USER_EMAIL=$(git config --get user.email)
+
+          if [ "$CURRENT_USER_EMAIL" != "$OWNER_EMAIL" ]; then
+            echo "أنت لست المالك المصرح له، البث لن يبدأ!"
+            exit 1
+          fi
+
+      - name: Add Watermark (Text) to Stream
+        run: |
+          STREAM_KEY="FB-122166221492260989-0-AbzzM6v3SqBiOlmm"
+          M3U8_URL="https://live4.beinconnect.us/YallaGoalApp/beINSports1.m3u8"  # رابط m3u8 الخاص بك
+          RTMP_URL="rtmps://live-api-s.facebook.com:443/rtmp/${STREAM_KEY}"
+
+          # بدء البث مع العلامة المائية النصية
+          ffmpeg -re -i "${M3U8_URL}" -filter_complex "[0:v]drawtext=text='IMADTV.COM':fontcolor=white:fontsize=40:x=10:y=10" -c:v libx264 -preset fast -b:v 1500k -c:a aac -ar 44100 -b:a 128k -f flv "${RTMP_URL}" \
+          || (echo "فشل البث، سيتم إعادة المحاولة بعد 10 ثواني..."; sleep 10; exec $0)
+
+      - name: Restart Action (Re-run if needed)
+        if: ${{ failure() }}
+        run: |
+          echo "إعادة تشغيل GitHub Action للبث المتواصل..."
+          curl -X POST https://api.github.com/repos/${{ github.repository }}/actions/workflows/facebook_live_stream.yml/dispatches \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -d '{"ref":"main"}'  # إعادة تشغيل البث بشكل تلقائي عبر API
+          
+      - name: Send Email Notification
+        run: |
+          # إرسال إشعار بالبريد الإلكتروني عند نجاح/فشل البث
+          python3 -c "
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+def send_email(subject, body):
+    sender_email = 'your_email@example.com'
+    receiver_email = 'imadmaskali22@gmail.com'
+    password = 'your_email_password'
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+    
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, password)
+            text = msg.as_string()
+            server.sendmail(sender_email, receiver_email, text)
+            print('تم إرسال البريد الإلكتروني بنجاح.')
+    except Exception as e:
+        print(f'فشل إرسال البريد الإلكتروني: {e}')
+        
+send_email('بث فيسبوك', 'تم بدء بث فيسبوك بنجاح أو فشل بسبب مشكلة.')
+"
