@@ -20,16 +20,6 @@ jobs:
           sudo apt update
           sudo apt install ffmpeg -y  # تثبيت FFmpeg
 
-      - name: Verify Ownership and Rights
-        run: |
-          OWNER_EMAIL="imadmaskali22@gmail.com"  # البريد الإلكتروني للمالك
-          CURRENT_USER_EMAIL=$(git config --get user.email)
-          if [ "$CURRENT_USER_EMAIL" != "$OWNER_EMAIL" ]; then
-            echo "أنت لست المالك المصرح له! البث لن يبدأ."
-            exit 1
-          fi
-          echo "المالك معتمد، بدء البث..."
-
       - name: Add Watermark and Start Stream
         run: |
           STREAM_KEY="FB-122166221492260989-0-AbzzM6v3SqBiOlmm"
