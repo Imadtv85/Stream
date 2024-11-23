@@ -1,0 +1,37 @@
+name: Setup Self-Hosted Runner
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  setup-self-hosted-runner:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl tar
+
+      - name: Download and Setup GitHub Runner
+        run: |
+          mkdir actions-runner && cd actions-runner
+          curl -o actions-runner-linux-x64-2.320.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.320.0/actions-runner-linux-x64-2.320.0.tar.gz
+          echo "93ac1b7ce743ee85b5d386f5c1787385ef07b3d7c728ff66ce0d3813d5f46900  actions-runner-linux-x64-2.320.0.tar.gz" | shasum -a 256 -c
+          tar xzf ./actions-runner-linux-x64-2.320.0.tar.gz
+
+      - name: Configure Runner
+        run: |
+          ./config.sh --url https://github.com/Imadtv85/Stream --token BNE7NU3RYQTUZGBBPXLZS2LHIGPCO
+
+      - name: Run the Runner
+        run: |
+          ./run.sh
+        env:
+          RUNNER_ALLOW_RUNASROOT: 1
